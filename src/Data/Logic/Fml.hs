@@ -5,7 +5,7 @@ module Data.Logic.Fml
     -- * Querying
 
     -- depth,
-    -- vars,
+    vars,
 
     -- * Formatting
     prettyFormat,
@@ -55,3 +55,17 @@ prettyFormat (Imply p q) = "(" ++ prettyFormat p ++ " => " ++ prettyFormat q ++ 
 prettyFormat (Equiv p q) = "(" ++ prettyFormat p ++ " <=> " ++ prettyFormat q ++ ")"
 prettyFormat (Not p) = "-" ++ prettyFormat p
 prettyFormat (Final v) = show v
+
+-- | ’vars’ @p@ returns all variables that occur in formula @p@. Duplicate
+--  occurrences are removes.
+vars :: (Eq a) => Fml a -> [Var.Var a]
+vars (Final var) = [var]
+vars (Not fml) = vars fml
+vars (And fml1 fml2) = vars fml1 ++ vars fml2
+vars (NAnd fml1 fml2) = vars fml1 ++ vars fml2
+vars (Or fml1 fml2) = vars fml1 ++ vars fml2
+vars (NOr fml1 fml2) = vars fml1 ++ vars fml2
+vars (XOr fml1 fml2) = vars fml1 ++ vars fml2
+vars (XNOr fml1 fml2) = vars fml1 ++ vars fml2
+vars (Imply fml1 fml2) = vars fml1 ++ vars fml2
+vars (Equiv fml1 fml2) = vars fml1 ++ vars fml2
