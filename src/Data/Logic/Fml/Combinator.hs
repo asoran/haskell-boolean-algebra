@@ -1,4 +1,4 @@
-module Data.Logic.Combinator
+module Data.Logic.Fml.Combinator
   ( -- * Type
     Var (..),
 

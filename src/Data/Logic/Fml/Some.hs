@@ -3,9 +3,21 @@ module Data.Logic.Fml.Some
   )
 where
 
+import Data.Logic.Fml
 import qualified Data.Logic.Fml as Fml
+import qualified Data.Logic.Var as Var
 import Data.Logic.Var.Some
 import qualified Data.Logic.Var.Some as Var.Some
+
+vx = Final $ Var.mk "x"
+
+vy = Final $ Var.mk "y"
+
+vz = Final $ Var.mk "z"
+
+-- toNNF
+
+toNnfImply = Imply vx vy
 
 -- TODO: ????
 -- fml1 :: Fml.Fml String

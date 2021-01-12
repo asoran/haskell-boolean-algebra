@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d650f8c5117c165edda963853d5df56587c666e34de1c489f4d78c2e6cbd8b87
+-- hash: a6a4172a05d8c8cca3043c2d5095a4ad6a809c3e11a20c45874206c701f71c06
 
 name:           haskell-boolean-algebra
 version:        0.1.0.0
@@ -27,8 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      Data.Logic.Combinator
       Data.Logic.Fml
+      Data.Logic.Fml.Combinator
       Data.Logic.Fml.Some
       Data.Logic.Var
       Data.Logic.Var.Some
