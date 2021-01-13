@@ -13,14 +13,14 @@ module Data.Logic.Fml
     toNNF,
     toCNF,
     -- toCCNF,
-    -- toDNF,
+    toDNF,
     -- toUniversalNAnd,
 
     -- * Testing
     isNNF,
-    -- isCNF,
+    isCNF,
     -- isCCNF,
-    -- isDNF,
+    isDNF,
   )
 where
 
@@ -164,3 +164,53 @@ isDNF (And (Or _ _) _) = False
 isDNF (And _ (Or _ _)) = False
 isDNF (Or fml1 fml2) = isDNF fml1 && isDNF fml2
 isDNF (And fml1 fml2) = isDNF fml1 && isDNF fml2
+
+
+-- |’toUniversalNAnd’ @p@ returns a NAND-formula that is equivalent
+-- to formula @p@.
+toUniversalNAnd :: Fml a -> Fml a
+Final val = val
+Not fml = NAnd computeFml computeFml where computeFml = toUniversalNAnd fml
+Or fml1 fml2 = NAnd (NAnd computeFml1 computeFml1) (NAnd computeFml2 computeFml2)
+  where
+    computeFml1 = toUniversalNAnd fml1
+    computeFml2 = toUniversalNAnd fml2
+
+And fml1 fml2 = NAnd (NAnd computeFml1 computeFml2) (NAnd computeFml1 computeFml2)
+  where
+    computeFml1 = toUniversalNAnd fml1
+    computeFml2 = toUniversalNAnd fml2
+    
+
+-- |’isUniversalNAnd’ @p@ returns true iff formula @p@ uses only NAND
+-- and variables.
+isUniversalNAnd :: Fml a -> Bool
+Final val = True
+NAnd fml1 fml2 = isUniversalNAnd fml1 && isUniversalNAnd fml2
+Fml fml = False
+    
+
+-- |’toUniversalNOr’ @p@ returns a NOR-formula that is equivalent
+-- to formula @p@.
+toUniversalNOr :: Fml a -> Fml a
+Final val = val
+Not fml = NOr computeFml computeFml where computeFml = toUniversalNOr fml
+Or fml1 fml2 = NOr (NOr computeFml1 computeFml2) (NOr computeFml1 computeFml2)
+  where
+    computeFml1 = toUniversalNOr fml1
+    computeFml2 = toUniversalNOr fml2
+And fml1 fml2 = NOr (NOr computeFml1 computeFml1) (NOr computeFml2 computeFml2)
+  where
+    computeFml1 = toUniversalNOr fml1
+    computeFml2 = toUniversalNOr fml2
+    
+    
+-- |’isUniversalNOr’ @p@ returns true iff formula @p@ uses only NOR
+-- and variables.
+isUniversalNOr :: Fml a -> Bool
+Final val = True
+NAnd fml1 fml2 = isUniversalNOr fml1 && isUniversalNOr fml2
+Fml fml = False
+
+-- |’toCCNF’ @f@ converts the formula @f@ to CCNF.
+toCCNF :: Fml a -> Fml a
