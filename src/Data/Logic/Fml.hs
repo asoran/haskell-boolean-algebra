@@ -12,7 +12,7 @@ module Data.Logic.Fml
     -- * Transforming
     toNNF,
     toCNF,
-    -- toCCNF,
+    toCCNF,
     toDNF,
     -- toUniversalNAnd,
 
@@ -165,52 +165,77 @@ isDNF (And _ (Or _ _)) = False
 isDNF (Or fml1 fml2) = isDNF fml1 && isDNF fml2
 isDNF (And fml1 fml2) = isDNF fml1 && isDNF fml2
 
-
--- |’toUniversalNAnd’ @p@ returns a NAND-formula that is equivalent
--- to formula @p@.
+-- | ’toUniversalNAnd’ @p@ returns a NAND-formula that is equivalent
+--  to formula @p@.
 toUniversalNAnd :: Fml a -> Fml a
-Final val = val
-Not fml = NAnd computeFml computeFml where computeFml = toUniversalNAnd fml
-Or fml1 fml2 = NAnd (NAnd computeFml1 computeFml1) (NAnd computeFml2 computeFml2)
+toUniversalNAnd fml = toUniversalNAnd' $ toNNF fml
   where
-    computeFml1 = toUniversalNAnd fml1
-    computeFml2 = toUniversalNAnd fml2
+    toUniversalNAnd' :: Fml a -> Fml a
+    toUniversalNAnd' (Final val) = Final val
+    toUniversalNAnd' (Not fml) = NAnd computeFml computeFml
+      where
+        computeFml = toUniversalNAnd' fml
+    toUniversalNAnd' (Or fml1 fml2) = NAnd (NAnd computeFml1 computeFml1) (NAnd computeFml2 computeFml2)
+      where
+        computeFml1 = toUniversalNAnd' fml1
+        computeFml2 = toUniversalNAnd' fml2
+    toUniversalNAnd' (And fml1 fml2) = NAnd (NAnd computeFml1 computeFml2) (NAnd computeFml1 computeFml2)
+      where
+        computeFml1 = toUniversalNAnd' fml1
+        computeFml2 = toUniversalNAnd' fml2
 
-And fml1 fml2 = NAnd (NAnd computeFml1 computeFml2) (NAnd computeFml1 computeFml2)
-  where
-    computeFml1 = toUniversalNAnd fml1
-    computeFml2 = toUniversalNAnd fml2
-    
-
--- |’isUniversalNAnd’ @p@ returns true iff formula @p@ uses only NAND
--- and variables.
+-- | ’isUniversalNAnd’ @p@ returns true iff formula @p@ uses only NAND
+--  and variables.
 isUniversalNAnd :: Fml a -> Bool
-Final val = True
-NAnd fml1 fml2 = isUniversalNAnd fml1 && isUniversalNAnd fml2
-Fml fml = False
-    
+isUniversalNAnd (Final _) = True
+isUniversalNAnd (NAnd fml1 fml2) = isUniversalNAnd fml1 && isUniversalNAnd fml2
+isUniversalNAnd _ = False
 
--- |’toUniversalNOr’ @p@ returns a NOR-formula that is equivalent
--- to formula @p@.
+-- | ’toUniversalNOr’ @p@ returns a NOR-formula that is equivalent
+--  to formula @p@.
 toUniversalNOr :: Fml a -> Fml a
-Final val = val
-Not fml = NOr computeFml computeFml where computeFml = toUniversalNOr fml
-Or fml1 fml2 = NOr (NOr computeFml1 computeFml2) (NOr computeFml1 computeFml2)
+toUniversalNOr fml = toUniversalNOr' $ toNNF fml
   where
-    computeFml1 = toUniversalNOr fml1
-    computeFml2 = toUniversalNOr fml2
-And fml1 fml2 = NOr (NOr computeFml1 computeFml1) (NOr computeFml2 computeFml2)
-  where
-    computeFml1 = toUniversalNOr fml1
-    computeFml2 = toUniversalNOr fml2
-    
-    
--- |’isUniversalNOr’ @p@ returns true iff formula @p@ uses only NOR
--- and variables.
-isUniversalNOr :: Fml a -> Bool
-Final val = True
-NAnd fml1 fml2 = isUniversalNOr fml1 && isUniversalNOr fml2
-Fml fml = False
+    toUniversalNOr' :: Fml a -> Fml a
+    toUniversalNOr' (Final val) = Final val
+    toUniversalNOr' (Not fml) = NOr computeFml computeFml
+      where
+        computeFml = toUniversalNOr' fml
+    toUniversalNOr' (Or fml1 fml2) = NOr (NOr computeFml1 computeFml2) (NOr computeFml1 computeFml2)
+      where
+        computeFml1 = toUniversalNOr' fml1
+        computeFml2 = toUniversalNOr' fml2
+    toUniversalNOr' (And fml1 fml2) = NOr (NOr computeFml1 computeFml1) (NOr computeFml2 computeFml2)
+      where
+        computeFml1 = toUniversalNOr' fml1
+        computeFml2 = toUniversalNOr' fml2
 
--- |’toCCNF’ @f@ converts the formula @f@ to CCNF.
+-- | ’isUniversalNOr’ @p@ returns true iff formula @p@ uses only NOR
+--  and variables.
+isUniversalNOr :: Fml a -> Bool
+isUniversalNOr (Final _) = True
+isUniversalNOr (NAnd fml1 fml2) = isUniversalNOr fml1 && isUniversalNOr fml2
+isUniversalNOr _ = False
+
+-- | ’toCCNF’ @f@ converts the formula @f@ to CCNF.
 toCCNF :: Fml a -> Fml a
+-- toCCNF fml = listToCCNF $ cNFtoList $ toCNF fml
+toCCNF = listToCCNF . cNFtoList . toCNF
+  where
+    -- Transforme un CNF en liste de fml pour qu'on lui applique des AND consécutifs
+    cNFtoList :: Fml a -> [Fml a]
+    cNFtoList (Final val) = [Final val]
+    cNFtoList (Or fml1 fml2) = [Or fml1 fml2]
+    cNFtoList (And fml1 fml2) = cNFtoList fml1 ++ cNFtoList fml2
+    cNFtoList (Not fml) = [Not fml]
+    -- Applique des AND consécutifs pour former une CCNF
+    listToCCNF :: [Fml a] -> Fml a
+    listToCCNF [e] = e
+    -- listToCCNF [] = ce cas ne devrais jamais arriver :)
+    listToCCNF (fml : rest) = And fml (listToCCNF rest)
+
+-- | ’isCCNF’ @f@ returns true iff formula @f@ is CCNF.
+isCCNF :: Fml a -> Bool
+isCCNF _ = True
+
+-- TODO: FAIRE

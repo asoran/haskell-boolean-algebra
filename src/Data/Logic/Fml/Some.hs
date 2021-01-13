@@ -1,5 +1,5 @@
 module Data.Logic.Fml.Some
-  (
+  ( toNnfImply,
   )
 where
 
