@@ -79,7 +79,7 @@ vars = removeDuplicates . vars' where
 
 depth :: (Num b, Ord b) => Fml a -> b
 depth (Final _) = 0
-depth (Not _) = 1
+depth (Not fml) = 1 + depth fml
 depth (And fml1 fml2) = 1 + max (depth fml1) (depth fml2)
 depth (NAnd fml1 fml2) = 1 + max (depth fml1) (depth fml2)
 depth (Or fml1 fml2) = 1 + max (depth fml1) (depth fml2)
