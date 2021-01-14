@@ -53,19 +53,29 @@ prettyFormat (Equiv p q) = "(" ++ prettyFormat p ++ " <=> " ++ prettyFormat q ++
 prettyFormat (Not p) = "-" ++ prettyFormat p
 prettyFormat (Final v) = show v
 
+-- Remove all duplicates
+removeDuplicates :: Eq a => [a] -> [a]
+removeDuplicates = rdHelper []
+    where rdHelper seen [] = seen
+          rdHelper seen (x:xs)
+              | x `elem` seen = rdHelper seen xs
+              | otherwise = rdHelper (seen ++ [x]) xs
+
 -- | ’vars’ @p@ returns all variables that occur in formula @p@. Duplicate
 --  occurrences are removes.
 vars :: (Eq a) => Fml a -> [Var.Var a]
-vars (Final var) = [var]
-vars (Not fml) = vars fml
-vars (And fml1 fml2) = vars fml1 ++ vars fml2
-vars (NAnd fml1 fml2) = vars fml1 ++ vars fml2
-vars (Or fml1 fml2) = vars fml1 ++ vars fml2
-vars (NOr fml1 fml2) = vars fml1 ++ vars fml2
-vars (XOr fml1 fml2) = vars fml1 ++ vars fml2
-vars (XNOr fml1 fml2) = vars fml1 ++ vars fml2
-vars (Imply fml1 fml2) = vars fml1 ++ vars fml2
-vars (Equiv fml1 fml2) = vars fml1 ++ vars fml2
+vars = removeDuplicates . vars' where
+  vars' :: Fml a -> [Var a]
+  vars' (Final var) = [var]
+  vars' (Not fml) = vars' fml
+  vars' (And fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (NAnd fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (Or fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (NOr fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (XOr fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (XNOr fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (Imply fml1 fml2) = vars' fml1 ++ vars' fml2
+  vars' (Equiv fml1 fml2) = vars' fml1 ++ vars' fml2
 
 depth :: (Num b, Ord b) => Fml a -> b
 depth (Final _) = 0
