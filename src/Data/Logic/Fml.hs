@@ -56,26 +56,28 @@ prettyFormat (Final v) = show v
 -- Remove all duplicates
 removeDuplicates :: Eq a => [a] -> [a]
 removeDuplicates = rdHelper []
-    where rdHelper seen [] = seen
-          rdHelper seen (x:xs)
-              | x `elem` seen = rdHelper seen xs
-              | otherwise = rdHelper (seen ++ [x]) xs
+  where
+    rdHelper seen [] = seen
+    rdHelper seen (x : xs)
+      | x `elem` seen = rdHelper seen xs
+      | otherwise = rdHelper (seen ++ [x]) xs
 
 -- | ’vars’ @p@ returns all variables that occur in formula @p@. Duplicate
 --  occurrences are removes.
 vars :: (Eq a) => Fml a -> [Var.Var a]
-vars = removeDuplicates . vars' where
-  vars' :: Fml a -> [Var a]
-  vars' (Final var) = [var]
-  vars' (Not fml) = vars' fml
-  vars' (And fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (NAnd fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (Or fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (NOr fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (XOr fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (XNOr fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (Imply fml1 fml2) = vars' fml1 ++ vars' fml2
-  vars' (Equiv fml1 fml2) = vars' fml1 ++ vars' fml2
+vars = removeDuplicates . vars'
+  where
+    vars' :: Fml a -> [Var a]
+    vars' (Final var) = [var]
+    vars' (Not fml) = vars' fml
+    vars' (And fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (NAnd fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (Or fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (NOr fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (XOr fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (XNOr fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (Imply fml1 fml2) = vars' fml1 ++ vars' fml2
+    vars' (Equiv fml1 fml2) = vars' fml1 ++ vars' fml2
 
 depth :: (Num b, Ord b) => Fml a -> b
 depth (Final _) = 0
@@ -93,16 +95,19 @@ depth (Equiv fml1 fml2) = 1 + max (depth fml1) (depth fml2)
 toNNF :: Fml a -> Fml a
 toNNF (Final var) = Final var
 toNNF (Not (Not fml)) = toNNF fml
-toNNF (Not fml) = Not fml
-toNNF (And fml1 fml2) = And fml1 fml2
-toNNF (Or fml1 fml2) = Or fml1 fml2
+toNNF (Not (Or fml1 fml2)) = And (toNNF (Not fml1)) (toNNF (Not fml2))
+toNNF (Not (And fml1 fml2)) = Or (toNNF (Not fml1)) (toNNF (Not fml2))
+toNNF (Not (Final var)) = Not $ Final var
+toNNF (Not fml) = toNNF (Not $ toNNF fml)
+toNNF (And fml1 fml2) = And (toNNF fml1) (toNNF fml2)
+toNNF (Or fml1 fml2) = Or (toNNF fml1) (toNNF fml2)
 -- oui
-toNNF (NAnd fml1 fml2) = Or (Not fml1) (Not fml2)
-toNNF (NOr fml1 fml2) = And (Not fml1) (Not fml2)
-toNNF (XOr fml1 fml2) = And (Or fml1 fml2) (Or (Not fml1) (Not fml2))
-toNNF (XNOr fml1 fml2) = Or (And fml1 fml2) (And (Not fml1) (Not fml2))
-toNNF (Imply fml1 fml2) = Or (Not fml1) fml2
-toNNF (Equiv fml1 fml2) = Or (And fml1 fml2) (And (Not fml1) (Not fml2))
+toNNF (NAnd fml1 fml2) = Or (toNNF (Not fml1)) (toNNF (Not fml2))
+toNNF (NOr fml1 fml2) = And (toNNF (Not fml1)) (toNNF (Not fml2))
+toNNF (XOr fml1 fml2) = And (Or (toNNF fml1) (toNNF fml2)) (Or (toNNF (Not fml1)) (toNNF (Not fml2)))
+toNNF (XNOr fml1 fml2) = Or (And (toNNF fml1) (toNNF fml2)) (And (toNNF (Not fml1)) (toNNF (Not fml2)))
+toNNF (Imply fml1 fml2) = Or (toNNF (Not fml1)) (toNNF fml2)
+toNNF (Equiv fml1 fml2) = Or (And (toNNF fml1) (toNNF fml2)) (And (toNNF (Not fml1)) (toNNF (Not fml2)))
 
 -- | ’isNNF’ @f@ returns true iff formula @f@ is NNF.
 isNNF :: Fml a -> Bool
