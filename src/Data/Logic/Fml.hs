@@ -39,7 +39,7 @@ data Fml a
   | Equiv (Fml a) (Fml a)
   | Not (Fml a)
   | Final (Var.Var a)
-  deriving (Show)
+  deriving (Show, Eq)
 
 prettyFormat :: (Show a) => Fml a -> String
 prettyFormat (And p q) = "(" ++ prettyFormat p ++ " . " ++ prettyFormat q ++ ")"
@@ -92,7 +92,7 @@ depth (Equiv fml1 fml2) = 1 + max (depth fml1) (depth fml2)
 -- | ’toNNF’ @f@ converts the formula @f@ to NNF.
 toNNF :: Fml a -> Fml a
 toNNF (Final var) = Final var
-toNNF (Not (Not fml)) = fml
+toNNF (Not (Not fml)) = toNNF fml
 toNNF (Not fml) = Not fml
 toNNF (And fml1 fml2) = And fml1 fml2
 toNNF (Or fml1 fml2) = Or fml1 fml2
