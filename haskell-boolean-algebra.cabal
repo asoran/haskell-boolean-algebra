@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a6a4172a05d8c8cca3043c2d5095a4ad6a809c3e11a20c45874206c701f71c06
+-- hash: d11a03ebc810a12c06f2977125b904a15053f977733b14d01054b177b228b9d6
 
 name:           haskell-boolean-algebra
 version:        0.1.0.0
@@ -44,6 +44,7 @@ test-suite haskell-boolean-algebra-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Data.Logic.FmlSpec
       Paths_haskell_boolean_algebra
   hs-source-dirs:
       test
@@ -51,4 +52,5 @@ test-suite haskell-boolean-algebra-test
   build-depends:
       base >=4.7 && <5
     , haskell-boolean-algebra
+    , hspec
   default-language: Haskell2010
