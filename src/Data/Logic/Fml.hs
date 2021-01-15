@@ -14,12 +14,13 @@ module Data.Logic.Fml
     toCNF,
     toCCNF,
     toDNF,
-    -- toUniversalNAnd,
+    toUniversalNAnd,
+    toUniversalNOr,
 
     -- * Testing
     isNNF,
     isCNF,
-    -- isCCNF,
+    isCCNF,
     isDNF,
   )
 where
@@ -95,13 +96,14 @@ depth (Equiv fml1 fml2) = 1 + max (depth fml1) (depth fml2)
 toNNF :: Fml a -> Fml a
 toNNF (Final var) = Final var
 toNNF (Not (Not fml)) = toNNF fml
+-- De Morgan’s
 toNNF (Not (Or fml1 fml2)) = And (toNNF (Not fml1)) (toNNF (Not fml2))
 toNNF (Not (And fml1 fml2)) = Or (toNNF (Not fml1)) (toNNF (Not fml2))
 toNNF (Not (Final var)) = Not $ Final var
 toNNF (Not fml) = toNNF (Not $ toNNF fml)
 toNNF (And fml1 fml2) = And (toNNF fml1) (toNNF fml2)
 toNNF (Or fml1 fml2) = Or (toNNF fml1) (toNNF fml2)
--- oui
+-- transformation
 toNNF (NAnd fml1 fml2) = Or (toNNF (Not fml1)) (toNNF (Not fml2))
 toNNF (NOr fml1 fml2) = And (toNNF (Not fml1)) (toNNF (Not fml2))
 toNNF (XOr fml1 fml2) = And (Or (toNNF fml1) (toNNF fml2)) (Or (toNNF (Not fml1)) (toNNF (Not fml2)))
@@ -111,74 +113,67 @@ toNNF (Equiv fml1 fml2) = Or (And (toNNF fml1) (toNNF fml2)) (And (toNNF (Not fm
 
 -- | ’isNNF’ @f@ returns true iff formula @f@ is NNF.
 isNNF :: Fml a -> Bool
--- false
-isNNF (NAnd _ _) = False
-isNNF (NOr _ _) = False
-isNNF (XOr _ _) = False
-isNNF (XNOr _ _) = False
-isNNF (Imply _ _) = False
-isNNF (Equiv _ _) = False
 -- True
 isNNF (Final _) = True
-isNNF (Not fml) = isNNF fml
+isNNF (Not (Final _)) = True
+isNNF (Not _) = False
 isNNF (Or fml1 fml2) = isNNF fml1 && isNNF fml2
 isNNF (And fml1 fml2) = isNNF fml1 && isNNF fml2
+isNNF _ = False
+
+distributeDisjunction :: Fml a -> Fml a -> Fml a
+distributeDisjunction fml1 (And fml2 fml3) = And (distributeDisjunction fml1 fml2) (distributeDisjunction fml1 fml3)
+distributeDisjunction (And fml1 fml2) fml3 = And (distributeDisjunction fml1 fml3) (distributeDisjunction fml2 fml3)
+distributeDisjunction fml1 fml2 = Or fml1 fml2
 
 -- | ’toCNF’ @f@ converts the formula @f@ to CNF.
 toCNF :: Fml a -> Fml a
 toCNF fml = nNFtoCNF (toNNF fml)
   where
     nNFtoCNF (Final var) = Final var
-    nNFtoCNF (Not fml) = Not (nNFtoCNF fml)
-    nNFtoCNF (Or (And fml1 fml2) fml3) = And (Or (nNFtoCNF fml1) (nNFtoCNF fml3)) (Or (nNFtoCNF fml2) (nNFtoCNF fml3))
-    nNFtoCNF (Or fml1 (And fml2 fml3)) = And (Or (nNFtoCNF fml1) (nNFtoCNF fml2)) (Or (nNFtoCNF fml1) (nNFtoCNF fml3))
+    nNFtoCNF (Not (Final var)) = Not (Final var)
+    nNFtoCNF (Or cnf@(And fml1 fml2) fml3) = distributeDisjunction cnf fml3
+    nNFtoCNF (Or fml1 cnf@(And fml2 fml3)) = distributeDisjunction cnf fml1
     nNFtoCNF (And fml1 fml2) = And (nNFtoCNF fml1) (nNFtoCNF fml2)
     nNFtoCNF (Or fml1 fml2) = Or (nNFtoCNF fml1) (nNFtoCNF fml2)
 
 -- | ’isCNF’ @f@ returns true iff formula @f@ is CNF.
 isCNF :: Fml a -> Bool
--- false
-isCNF (NAnd _ _) = False
-isCNF (NOr _ _) = False
-isCNF (XOr _ _) = False
-isCNF (XNOr _ _) = False
-isCNF (Imply _ _) = False
-isCNF (Equiv _ _) = False
--- true
 isCNF (Final _) = True
-isCNF (Not fml) = isCNF fml
+isCNF (Not (Final _)) = True
+isCNF (Not _) = False
 isCNF (Or (And _ _) _) = False
 isCNF (Or _ (And _ _)) = False
 isCNF (Or fml1 fml2) = isCNF fml1 && isCNF fml2
 isCNF (And fml1 fml2) = isCNF fml1 && isCNF fml2
+isCNF fml = isNNF fml
+
+distributeConjonction :: Fml a -> Fml a -> Fml a
+distributeConjonction fml1 (Or fml2 fml3) = Or (distributeConjonction fml1 fml2) (distributeConjonction fml1 fml3)
+distributeConjonction (Or fml1 fml2) fml3 = Or (distributeConjonction fml1 fml3) (distributeConjonction fml2 fml3)
+distributeConjonction fml1 fml2 = And fml1 fml2
 
 -- | ’toDNF’ @f@ converts the formula @f@ to DNF.
 toDNF :: Fml a -> Fml a
 toDNF fml = nNFtoDNF (toNNF fml)
   where
     nNFtoDNF (Final var) = Final var
-    nNFtoDNF (Not fml) = Not (nNFtoDNF fml)
-    nNFtoDNF (And (Or fml1 fml2) fml3) = Or (And (nNFtoDNF fml1) (nNFtoDNF fml3)) (And (nNFtoDNF fml2) (nNFtoDNF fml3))
-    nNFtoDNF (And fml1 (Or fml2 fml3)) = Or (And (nNFtoDNF fml1) (nNFtoDNF fml2)) (And (nNFtoDNF fml1) (nNFtoDNF fml3))
+    nNFtoDNF (Not (Final var)) = Not (Final var)
+    nNFtoDNF (And dnf@(Or fml1 fml2) fml3) = distributeConjonction dnf fml3
+    nNFtoDNF (And fml1 dnf@(Or fml2 fml3)) = distributeConjonction dnf fml1
     nNFtoDNF (And fml1 fml2) = And (nNFtoDNF fml1) (nNFtoDNF fml2)
     nNFtoDNF (Or fml1 fml2) = Or (nNFtoDNF fml1) (nNFtoDNF fml2)
 
 -- | ’isDNF’ @f@ returns true iff formula @f@ is DNF.
 isDNF :: Fml a -> Bool
--- false
-isDNF (NAnd _ _) = False
-isDNF (NOr _ _) = False
-isDNF (XOr _ _) = False
-isDNF (XNOr _ _) = False
-isDNF (Imply _ _) = False
-isDNF (Equiv _ _) = False
--- true
 isDNF (Final _) = True
-isDNF (Not fml) = isDNF fml
+isDNF (Not (Final _)) = True
+isDNF (Not fml) = False
 isDNF (And (Or _ _) _) = False
 isDNF (And _ (Or _ _)) = False
 isDNF (Or fml1 fml2) = isDNF fml1 && isDNF fml2
 isDNF (And fml1 fml2) = isDNF fml1 && isDNF fml2
+isDNF fml = isNNF fml
 
 -- | ’toUniversalNAnd’ @p@ returns a NAND-formula that is equivalent
 --  to formula @p@.
@@ -229,7 +224,7 @@ toUniversalNOr fml = toUniversalNOr' $ toNNF fml
 --  and variables.
 isUniversalNOr :: Fml a -> Bool
 isUniversalNOr (Final _) = True
-isUniversalNOr (NAnd fml1 fml2) = isUniversalNOr fml1 && isUniversalNOr fml2
+isUniversalNOr (NOr fml1 fml2) = isUniversalNOr fml1 && isUniversalNOr fml2
 isUniversalNOr _ = False
 
 -- | ’toCCNF’ @f@ converts the formula @f@ to CCNF.
@@ -245,12 +240,24 @@ toCCNF = listToCCNF . cNFtoList . toCNF
     cNFtoList (Not fml) = [Not fml]
     -- Applique des AND consécutifs pour former une CCNF
     listToCCNF :: [Fml a] -> Fml a
-    listToCCNF [e] = e
-    -- listToCCNF [] = ce cas ne devrais jamais arriver :)
-    listToCCNF (fml : rest) = And fml (listToCCNF rest)
+    listToCCNF = foldr1 And
+
+notContainsAnd :: Fml a -> Bool
+notContainsAnd (Final _) = True
+notContainsAnd (Not fml) = notContainsAnd fml
+notContainsAnd (And _ _) = False
+notContainsAnd (NAnd fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (Or fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (NOr fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (XOr fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (XNOr fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (Imply fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
+notContainsAnd (Equiv fml1 fml2) = notContainsAnd fml1 && notContainsAnd fml2
 
 -- | ’isCCNF’ @f@ returns true iff formula @f@ is CCNF.
 isCCNF :: Fml a -> Bool
-isCCNF _ = True
-
--- TODO: FAIRE
+isCCNF (Final _) = True
+isCCNF (Not (Final _)) = True
+isCCNF (Not fml) = False
+isCCNF (And fml1 fml2) = notContainsAnd fml1 && isCNF fml1 && isCCNF fml2
+isCCNF fml = isCNF fml
