@@ -22,6 +22,7 @@ module Data.Logic.Fml
     isCNF,
     isCCNF,
     isDNF,
+    simplifyFml,
   )
 where
 
@@ -264,11 +265,15 @@ isCCNF (And fml1 fml2) = notContainsAnd fml1 && isCNF fml1 && isCCNF fml2
 isCCNF fml = isCNF fml
 
 -- Bonus
-
+-- This function doesn't work :(
 simplifyFml :: (Eq a) => Fml a -> Fml a
 -- Note: il faudrait le rendre récursif
 -- mais quand est ce qu'on arrête ??
-simplifyFml fml@(Or fml1 fml2) = bool fml1 fml (fml1 == fml2)
-simplifyFml fml@(And fml1 fml2) = bool fml1 fml (fml1 == fml2)
-simplifyFml (Not (Not fml)) = fml
-simplifyFml fml = fml
+simplifyFml fml = bool (simplifyFml simp) fml (simp == fml)
+  where
+    simp = simplifyFml' fml
+    simplifyFml' (Or fml1 fml2) = bool (Or (simplifyFml' fml1) (simplifyFml' fml2)) (simplifyFml' fml1) (fml1 == fml2)
+    simplifyFml' (And fml1 fml2) = bool (And (simplifyFml' fml1) (simplifyFml' fml2)) (simplifyFml' fml1) (fml1 == fml2)
+    simplifyFml' (Not (Not fml)) = simplifyFml fml
+    simplifyFml' (Final var) = Final var
+    simplifyFml' fml = simplifyFml' fml

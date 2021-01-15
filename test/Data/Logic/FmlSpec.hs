@@ -161,3 +161,7 @@ spec = do
       isCCNF ((vx `Or` vy) `And` ((Not vy `Or` vz) `And` ((vx `Or` vy) `Or` Not vz))) `shouldBe` True
     it "isNotCCNF teacher 1" $ do
       isCCNF (((vx `Or` vy) `And` (Not vy `Or` vz)) `And` ((vx `Or` vy) `Or` Not vz)) `shouldBe` False
+
+-- describe "simplifyFml" $ do
+--   it "simplify or" $ do
+--     simplifyFml (Or vx vx) `shouldBe` vx
