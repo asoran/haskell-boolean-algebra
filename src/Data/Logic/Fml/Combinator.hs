@@ -41,14 +41,12 @@ multAnd fmls = Just $ foldr1 And fmls
 -- | ’allOf’ @vs@ returns a formula that is satisfiable iff all variables
 --  in @vs@ are true. The function returns @Nothing@ if @vs@ is the empty list.
 allOf :: [Var.Var a] -> Maybe (Fml a)
-allOf [] = Nothing
-allOf vars = multAnd $ map Final vars
+allOf = multAnd . map Final
 
 -- | ’noneOf’ @vs@ returns a formula that is satisfiable iff no variable
 --  in @vs@ is true. The function returns @Nothing@ if @vs@ is the empty list.
 noneOf :: [Var.Var a] -> Maybe (Fml a)
-noneOf [] = Nothing
-noneOf vars = multAnd $ map (Not . Final) vars
+noneOf = multAnd . map (Not . Final)
 
 -- | ’atLeast’ @vs@ @k@ returns a formula that is satisfied iff at least @k@
 --  variables in @vs@ are true. The function returns @Nothing@ if @vs@ is the

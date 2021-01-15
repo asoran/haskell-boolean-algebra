@@ -25,6 +25,7 @@ module Data.Logic.Fml
   )
 where
 
+import Data.Bool
 import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Logic.Var as Var
@@ -261,3 +262,13 @@ isCCNF (Not (Final _)) = True
 isCCNF (Not fml) = False
 isCCNF (And fml1 fml2) = notContainsAnd fml1 && isCNF fml1 && isCCNF fml2
 isCCNF fml = isCNF fml
+
+-- Bonus
+
+simplifyFml :: (Eq a) => Fml a -> Fml a
+-- Note: il faudrait le rendre récursif
+-- mais quand est ce qu'on arrête ??
+simplifyFml fml@(Or fml1 fml2) = bool fml1 fml (fml1 == fml2)
+simplifyFml fml@(And fml1 fml2) = bool fml1 fml (fml1 == fml2)
+simplifyFml (Not (Not fml)) = fml
+simplifyFml fml = fml

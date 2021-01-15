@@ -3,6 +3,7 @@ module Data.Logic.Fml.CombinatorSpec (spec) where
 import Data.Logic.Fml
 import Data.Logic.Fml.Combinator
 import Data.Logic.Var
+import Data.Maybe
 import Test.Hspec
 
 v1 :: Fml Integer
@@ -25,6 +26,7 @@ spec = do
   describe "allOf" $ do
     it "allOf" $ do
       allOf [mk i | i <- [1 .. 4]] `shouldBe` Just (And v1 (And v2 (And v3 v4)))
+
   describe "noneOf" $ do
     it "noneOf" $ do
       noneOf [mk i | i <- [1 .. 4]] `shouldBe` Just (And (Not v1) (And (Not v2) (And (Not v3) (Not v4))))
